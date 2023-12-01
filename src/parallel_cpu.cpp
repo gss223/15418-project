@@ -3,7 +3,9 @@
 #include "parallel_cpu.h"
 #include "get_subset_sums.h"
 
-// TODO: write fft/ntt and try to parallelize (maybe)?
+#include "convolution.h"
+
+// TODO: replace atcoder's fft and parallelize it
 
 std::vector<int> solve_exponential(const std::vector<int>& w, const int T, const int l, const int r, bool& is_possible) {
     const int len = r - l;
@@ -47,7 +49,7 @@ std::vector<int> solve_sequential(const std::vector<int>& w, const int T, const 
         return {};
     }
 
-    auto convolution = conv(left, right);
+    auto convolution = atcoder::convolution(left, right);
 
     if (static_cast<int>(std::size(convolution)) > T + 1) {
         convolution.resize(T + 1);
@@ -98,7 +100,7 @@ std::vector<int> solve(const std::vector<int>& w, const int T, const int l, cons
         return {};
     }
 
-    auto convolution = conv(left, right);
+    auto convolution = atcoder::convolution(left, right);
 
     if (static_cast<int>(std::size(convolution)) > T + 1) {
         convolution.resize(T + 1);
