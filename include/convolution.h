@@ -67,7 +67,6 @@ constexpr int countr_zero_constexpr(unsigned int n) {
 #define ATCODER_MODINT_HPP 1
 
 #include <cassert>
-#include <numeric>
 #include <type_traits>
 
 #ifdef _MSC_VER
@@ -291,7 +290,6 @@ unsigned long long floor_sum_unsigned(unsigned long long n,
 #define ATCODER_INTERNAL_TYPE_TRAITS_HPP 1
 
 #include <cassert>
-#include <numeric>
 #include <type_traits>
 
 namespace atcoder {

@@ -1,5 +1,6 @@
+#include <cstdint>
 #include <vector>
 
-std::vector<int> solve_naive(const std::vector<int>& w, const int T, const int l, const int r, bool& is_possible);
+std::vector<uint32_t> solve_naive(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t l, const uint32_t r, bool& is_possible);
 
-bool solve_naive(const std::vector<int>& w, const int T);
+bool solve_naive(const std::vector<uint32_t>& w, const uint32_t T);

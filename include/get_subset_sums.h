@@ -32,7 +32,7 @@ namespace ispc { /* namespace */
 #if defined(__cplusplus) && (! defined(__ISPC_NO_EXTERN_C) || !__ISPC_NO_EXTERN_C )
 extern "C" {
 #endif // __cplusplus
-    extern void get_subset_sums(const int32_t * w, const int32_t T, const int32_t l, const int32_t r, int32_t * sums);
+    extern void get_subset_sums(const uint32_t * w, const uint32_t T, const uint32_t l, const uint32_t r, uint32_t * sums);
 #if defined(__cplusplus) && (! defined(__ISPC_NO_EXTERN_C) || !__ISPC_NO_EXTERN_C )
 } /* end extern C */
 #endif // __cplusplus

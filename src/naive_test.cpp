@@ -8,8 +8,8 @@ int main() {
     int N, T;
     std::cin >> N >> T;
 
-    std::vector<int> w(N);
-    for (int& x : w) {
+    std::vector<uint32_t> w(N);
+    for (uint32_t& x : w) {
         std::cin >> x;
     }
 
