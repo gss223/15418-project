@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
 
     fout << N << ' ' << T << '\n';
     for (int i = 0; i < N; i++) {
-        fout << std::uniform_int_distribution<int>(0, C)(rng) << ' ';
+        fout << std::uniform_int_distribution<int>(1, C)(rng) << ' ';
     }
     fout << '\n';
 }
