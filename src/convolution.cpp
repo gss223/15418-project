@@ -70,6 +70,7 @@ void fft(std::vector<std::complex<double>>& v) {
 
 template<bool inverse>
 void fft_iterative(std::vector<std::complex<double>>& v) {
+#pragma omp parallel for schedule(dynamic)
     for (uint32_t i = 0; i < max_n; i++) {
         if (i < reversed[i]) {
             swap(v[i], v[reversed[i]]);
@@ -97,6 +98,7 @@ void fft_iterative(std::vector<std::complex<double>>& v) {
     }
 
     if constexpr (inverse) {
+#pragma omp parallel for
         for (auto& x : v) {
             x /= max_n;
         }
