@@ -17,8 +17,8 @@ BINDIR = bin
 
 .PHONY: all clean object bin
 
-parallel_cpu_test: parallel_cpu.o get_subset_sums.o convolution.o parallel_cpu_test.o naive.o bin
-	$(CXX) $(CXXFLAGS) -fopenmp -o bin/parallel_cpu_test $(OBJDIR)/parallel_cpu.o $(OBJDIR)/get_subset_sums.o $(OBJDIR)/convolution.o $(OBJDIR)/parallel_cpu_test.o $(OBJDIR)/naive.o
+parallel_cpu_test: parallel_cpu.o get_subset_sums.o convolution.o utils.o parallel_cpu_test.o naive.o bin
+	$(CXX) $(CXXFLAGS) -fopenmp -o bin/parallel_cpu_test $(OBJDIR)/parallel_cpu.o $(OBJDIR)/get_subset_sums.o $(OBJDIR)/convolution.o $(OBJDIR)/utils.o $(OBJDIR)/parallel_cpu_test.o $(OBJDIR)/naive.o
 
 naive_test: naive_test.o naive.o bin
 	$(CXX) $(CXXFLAGS) -o $(BINDIR)/naive_test $(OBJDIR)/naive_test.o $(OBJDIR)/naive.o
@@ -34,6 +34,9 @@ parallel_cpu.o: object
 
 convolution.o: object
 	$(CXX) $(CXXFLAGS) -fopenmp -c -o $(OBJDIR)/convolution.o $(SRCDIR)/convolution.cpp
+
+utils.o: object
+	$(CXX) $(CXXFLAGS) -fopenmp -c -o $(OBJDIR)/utils.o $(SRCDIR)/utils.cpp
 
 get_subset_sums.o: object
 	$(ISPC) $(ISPCFLAGS) -o $(OBJDIR)/get_subset_sums.o $(SRCDIR)/get_subset_sums.ispc

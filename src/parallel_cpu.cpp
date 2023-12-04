@@ -94,10 +94,6 @@ void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, const uin
         blocks[i] = solve_sequential(w, T, T_ceil, l, r, is_possible);
     }
 
-    if (is_possible) {
-        return;
-    }
-
     const int num_iterations = std::bit_width(num_blocks) - 1;
     for (int iter = 0; iter < num_iterations; iter++) {
         const uint32_t blocks_next_size = (std::size(blocks) + 1) / 2;
@@ -116,10 +112,6 @@ void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, const uin
             }
         }
 
-        if (is_possible) {
-            return;
-        }
-
         blocks = std::move(blocks_next);
     }
 }
@@ -129,7 +121,6 @@ bool solve_parallel(const std::vector<uint32_t>& w, const uint32_t T) {
     const uint32_t T_ceil = std::bit_ceil(T + 1);
 
     conv_init(T_ceil);
-
     solve_iterative(w, T, T_ceil, is_possible);
 
     return is_possible;

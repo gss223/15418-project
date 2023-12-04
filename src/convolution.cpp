@@ -1,9 +1,12 @@
 #include <complex>
 #include <vector>
+#include <bit>
 
 #include "convolution.h"
+#include "utils.h"
 
 std::vector<std::complex<double>> roots, roots_inv;
+std::vector<uint32_t> reversed;
 uint32_t max_n, half;
 
 // T_ceil is the target rounded up to nearest power of 2
@@ -13,6 +16,14 @@ void conv_init(const uint32_t T_ceil) {
 
     roots.resize(half);
     roots_inv.resize(half);
+    reversed.resize(max_n);
+
+    const int bit_count = std::bit_width(max_n) - 1;
+
+#pragma omp parallel for
+    for (uint32_t i = 0; i < max_n; i++) {
+        reversed[i] = reverse_bits(i, bit_count);
+    }
     
     const double theta = 2 * M_PI / T_ceil, theta_inv = theta * -1;
 
