@@ -1,11 +1,11 @@
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++17 -Iinclude
+CXXFLAGS = -Wall -Wextra -std=c++20 -Iinclude
 
 ISPC = ispc
 ISPCFLAGS = --target=avx2-i32x8 --arch=x86-64
 
 ifeq ($(mode),release)
-	CXXFLAGS += -O3
+	CXXFLAGS += -O3 -mavx2
 	ISPCFLAGS += -O3
 else ifeq ($(mode),debug)
 	CXXFLAGS += -g -O0 -D_GLIBCXX_DEBUG
@@ -15,12 +15,10 @@ SRCDIR = src
 OBJDIR = build
 BINDIR = bin
 
-OBJS = parallel_cpu.o get_subset_sums.o naive.o
-
 .PHONY: all clean object bin
 
-parallel_cpu_test: parallel_cpu.o get_subset_sums.o parallel_cpu_test.o bin
-	$(CXX) $(CXXFLAGS) -fopenmp -o bin/parallel_cpu_test $(OBJDIR)/parallel_cpu.o $(OBJDIR)/get_subset_sums.o $(OBJDIR)/parallel_cpu_test.o
+parallel_cpu_test: parallel_cpu.o get_subset_sums.o convolution.o parallel_cpu_test.o naive.o bin
+	$(CXX) $(CXXFLAGS) -fopenmp -o bin/parallel_cpu_test $(OBJDIR)/parallel_cpu.o $(OBJDIR)/get_subset_sums.o $(OBJDIR)/convolution.o $(OBJDIR)/parallel_cpu_test.o $(OBJDIR)/naive.o
 
 naive_test: naive_test.o naive.o bin
 	$(CXX) $(CXXFLAGS) -o $(BINDIR)/naive_test $(OBJDIR)/naive_test.o $(OBJDIR)/naive.o
@@ -33,6 +31,9 @@ naive_test.o: object
 
 parallel_cpu.o: object
 	$(CXX) $(CXXFLAGS) -fopenmp -c -o $(OBJDIR)/parallel_cpu.o $(SRCDIR)/parallel_cpu.cpp
+
+convolution.o: object
+	$(CXX) $(CXXFLAGS) -fopenmp -c -o $(OBJDIR)/convolution.o $(SRCDIR)/convolution.cpp
 
 get_subset_sums.o: object
 	$(ISPC) $(ISPCFLAGS) -o $(OBJDIR)/get_subset_sums.o $(SRCDIR)/get_subset_sums.ispc
