@@ -12,14 +12,14 @@ void conv_init(const uint32_t T_ceil) {
     n = T_ceil;
     half = n / 2;
 
-    roots.resize(n);
-    roots_inv.resize(n);
+    roots.resize(half);
+    roots_inv.resize(half);
     
     const double theta = 2 * M_PI / T_ceil, theta_inv = theta * -1;
     const std::complex<double> w(std::cos(theta), std::sin(theta)), w_inv(std::cos(theta_inv), std::sin(theta_inv));
     roots[0] = roots_inv[0] = std::complex<double>(1);
 
-    for (uint32_t i = 1; i < n; i++) {
+    for (uint32_t i = 1; i < half; i++) {
         roots[i] = roots[i - 1] * w;
         roots_inv[i] = roots_inv[i - 1] * w_inv;
     }
