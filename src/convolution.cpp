@@ -4,12 +4,12 @@
 #include "convolution.h"
 
 std::vector<std::complex<double>> roots, roots_inv;
-uint32_t n, half;
+uint32_t max_n, half;
 
 // T_ceil is the target rounded up to nearest power of 2
 void conv_init(const uint32_t T_ceil) {
-    n = T_ceil;
-    half = n / 2;
+    max_n = T_ceil;
+    half = max_n / 2;
 
     roots.resize(half);
     roots_inv.resize(half);
@@ -41,16 +41,18 @@ void fft(std::vector<std::complex<double>>& v) {
     fft<inverse>(even);
     fft<inverse>(odd);
 
+    const int roots_shift = max_n / n;
+
     for (int i = 0; i < half; i++) {
         if constexpr (inverse) {
-            v[i] = even[i] + roots_inv[i] * odd[i];
-            v[i + half] = even[i] - roots_inv[i] * odd[i];
+            v[i] = even[i] + roots_inv[i * roots_shift] * odd[i];
+            v[i + half] = even[i] - roots_inv[i * roots_shift] * odd[i];
 
             v[i] /= 2;
             v[i + half] /= 2;
         } else {
-            v[i] = even[i] + roots[i] * odd[i];
-            v[i + half] = even[i] - roots[i] * odd[i];
+            v[i] = even[i] + roots[i * roots_shift] * odd[i];
+            v[i + half] = even[i] - roots[i * roots_shift] * odd[i];
         }
     }
 }
@@ -61,14 +63,14 @@ std::vector<uint32_t> conv(std::vector<uint32_t> a, std::vector<uint32_t> b) {
     fft<false>(ca);
     fft<false>(cb);
 
-    for (uint32_t i = 0; i < n; i++) {
+    for (uint32_t i = 0; i < max_n; i++) {
         ca[i] *= cb[i];
     }
 
     fft<true>(ca);
 
-    std::vector<uint32_t> res(n);
-    for (uint32_t i = 0; i < n; i++) {
+    std::vector<uint32_t> res(max_n);
+    for (uint32_t i = 0; i < max_n; i++) {
         res[i] = (ca[i].real() > 0);
     }
 
