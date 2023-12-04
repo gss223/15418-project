@@ -46,8 +46,8 @@ void fft(std::vector<std::complex<double>>& v) {
             v[i] = even[i] + roots_inv[i] * odd[i];
             v[i + half] = even[i] - roots_inv[i] * odd[i];
 
-            v[i] /= n;
-            v[i + half] /= n;
+            v[i] /= 2;
+            v[i + half] /= 2;
         } else {
             v[i] = even[i] + roots[i] * odd[i];
             v[i + half] = even[i] - roots[i] * odd[i];
