@@ -1,4 +1,5 @@
 #include <complex>
+#include <iostream>
 #include <vector>
 #include <bit>
 
@@ -34,7 +35,6 @@ void conv_init(const uint32_t T_ceil) {
     }
 }
 
-// assumes v has length n
 template<bool inverse>
 void fft(std::vector<std::complex<double>>& v) {
     const int n = std::size(v), half = n / 2;
@@ -68,17 +68,52 @@ void fft(std::vector<std::complex<double>>& v) {
     }
 }
 
+template<bool inverse>
+void fft_iterative(std::vector<std::complex<double>>& v) {
+    for (uint32_t i = 0; i < max_n; i++) {
+        if (i < reversed[i]) {
+            swap(v[i], v[reversed[i]]);
+        }
+    }
+
+    for (uint32_t len = 2; len <= max_n; len *= 2) {
+#pragma omp parallel for
+        for (uint32_t chunk_start = 0; chunk_start < max_n; chunk_start += len) {
+            for (uint32_t i = 0; i < len / 2; i++) {
+                std::complex<double> w;
+
+                if constexpr (inverse) {
+                    w = roots_inv[max_n / len * i];
+                } else {
+                    w = roots[max_n / len * i];
+                }
+
+                std::complex<double> y0 = v[chunk_start + i], y1 = w * v[chunk_start + i + len / 2];
+
+                v[chunk_start + i] = y0 + y1;
+                v[chunk_start + i + len / 2] = y0 - y1;
+            }
+        }
+    }
+
+    if constexpr (inverse) {
+        for (auto& x : v) {
+            x /= max_n;
+        }
+    }
+}
+
 std::vector<uint32_t> conv(std::vector<uint32_t> a, std::vector<uint32_t> b) {
     std::vector<std::complex<double>> ca(std::begin(a), std::end(a)), cb(std::begin(b), std::end(b));
 
-    fft<false>(ca);
-    fft<false>(cb);
+    fft_iterative<false>(ca);
+    fft_iterative<false>(cb);
 
     for (uint32_t i = 0; i < max_n; i++) {
         ca[i] *= cb[i];
     }
 
-    fft<true>(ca);
+    fft_iterative<true>(cb);
 
     std::vector<uint32_t> res(max_n);
     for (uint32_t i = 0; i < max_n; i++) {
