@@ -1,6 +1,5 @@
 #include <complex>
 #include <vector>
-#include <cmath>
 
 #include "convolution.h"
 
@@ -16,12 +15,11 @@ void conv_init(const uint32_t T_ceil) {
     roots_inv.resize(half);
     
     const double theta = 2 * M_PI / T_ceil, theta_inv = theta * -1;
-    const std::complex<double> w(std::cos(theta), std::sin(theta)), w_inv(std::cos(theta_inv), std::sin(theta_inv));
-    roots[0] = roots_inv[0] = std::complex<double>(1);
 
-    for (uint32_t i = 1; i < half; i++) {
-        roots[i] = roots[i - 1] * w;
-        roots_inv[i] = roots_inv[i - 1] * w_inv;
+#pragma omp parallel for
+    for (uint32_t i = 0; i < half; i++) {
+        roots[i] = std::polar(1.0, theta * i);
+        roots_inv[i] = std::polar(1.0, theta_inv * i);
     }
 }
 
