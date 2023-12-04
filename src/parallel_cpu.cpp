@@ -1,31 +1,10 @@
-#include <algorithm>
 #include <bit>
 
-#include "get_subset_sums.h"
 #include "parallel_cpu.h"
 #include "convolution.h"
 #include "naive.h"
 
 // TODO: replace atcoder's fft and parallelize it
-
-std::vector<uint32_t> solve_exponential(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t l, const uint32_t r, bool& is_possible) {
-    const uint32_t len = r - l;
-
-    std::vector<uint32_t> sums(1 << len);
-    ispc::get_subset_sums(w.data(), T, l, r, sums.data());
-
-    const uint32_t total_sum = sums.back();
-    std::vector<uint32_t> possible(std::min(T, total_sum) + 1);
-
-    for (uint32_t x : sums) {
-        if (x <= T) {
-            possible[x] = true;
-        }
-    }
-
-    is_possible = is_possible || (static_cast<uint32_t>(std::size(possible)) >= T + 1 && possible[T]);
-    return (is_possible ? std::vector<uint32_t>() : possible);
-}
 
 std::vector<uint32_t> solve_sequential(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t T_ceil, const uint32_t l, const uint32_t r, bool& is_possible) {
     const uint32_t len = r - l;
@@ -34,13 +13,6 @@ std::vector<uint32_t> solve_sequential(const std::vector<uint32_t>& w, const uin
         return solve_naive(w, T, T_ceil, l, r, is_possible);
     }
 
-    /*
-     * Probably never worth to use this
-        if (len <= USE_EXPONENTIAL) {
-            return solve_exponential(w, T, l, r, is_possible);
-        }
-    */
-
     const uint32_t m = l + len / 2;
 
     std::vector<uint32_t> left, right;
@@ -48,13 +20,13 @@ std::vector<uint32_t> solve_sequential(const std::vector<uint32_t>& w, const uin
     left = solve_sequential(w, T, T_ceil, l, m, is_possible);
 
     if (is_possible) {
-        return {};
+        // return {};
     }
 
     right = solve_sequential(w, T, T_ceil, m, r, is_possible);
 
     if (is_possible) {
-        return {};
+        // return {};
     }
 
     auto convolution = conv(left, right);
@@ -62,13 +34,12 @@ std::vector<uint32_t> solve_sequential(const std::vector<uint32_t>& w, const uin
     if (convolution[T]) {
         is_possible = true;
 
-        return {};
+        // return {};
     }
 
     return convolution;
 }
 
-// maybe switch to naive if sum is small enough
 std::vector<uint32_t> solve(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t T_ceil, const uint32_t l, const uint32_t r, bool& is_possible) {
     const uint32_t len = r - l;
 
@@ -80,13 +51,6 @@ std::vector<uint32_t> solve(const std::vector<uint32_t>& w, const uint32_t T, co
         return solve_naive(w, T, T_ceil, l, r, is_possible);
     }
 
-    /*
-     * Probably never worth to use this
-        if (len <= USE_EXPONENTIAL) {
-            return solve_exponential(w, T, l, r, is_possible);
-        }
-    */
-
     const uint32_t m = l + len / 2;
 
     std::vector<uint32_t> left, right;
@@ -95,7 +59,7 @@ std::vector<uint32_t> solve(const std::vector<uint32_t>& w, const uint32_t T, co
     left = solve(w, T, T_ceil, l, m, is_possible);
 
     if (is_possible) {
-        return {};
+        // return {};
     }
 
 #pragma omp task shared(w, T, l, r, is_possible, right)
@@ -104,7 +68,7 @@ std::vector<uint32_t> solve(const std::vector<uint32_t>& w, const uint32_t T, co
 #pragma omp taskwait
 
     if (is_possible) {
-        return {};
+        // return {};
     }
 
     auto convolution = conv(left, right);
@@ -112,10 +76,52 @@ std::vector<uint32_t> solve(const std::vector<uint32_t>& w, const uint32_t T, co
     if (convolution[T]) {
         is_possible = true;
 
-        return {};
+        // return {};
     }
 
     return convolution;
+}
+
+void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t T_ceil, bool& is_possible) {
+    const int n = std::size(w);
+    const uint32_t num_blocks = (n + USE_NAIVE - 1) / USE_NAIVE;
+
+    std::vector<std::vector<uint32_t>> blocks(num_blocks);
+
+#pragma omp parallel for
+    for (uint32_t i = 0; i < num_blocks; i++) {
+        const int l = USE_NAIVE * i, r = std::min(l + USE_NAIVE, n);
+        blocks[i] = solve_sequential(w, T, T_ceil, l, r, is_possible);
+    }
+
+    if (is_possible) {
+        return;
+    }
+
+    const int num_iterations = std::bit_width(num_blocks) - 1;
+    for (int iter = 0; iter < num_iterations; iter++) {
+        const uint32_t blocks_next_size = (std::size(blocks) + 1) / 2;
+        std::vector<std::vector<uint32_t>> blocks_next(blocks_next_size);
+
+#pragma omp parallel for
+        for (uint32_t i = 0; i < blocks_next_size; i++) {
+            if (2 * i + 1 < std::size(blocks)) {
+                blocks_next[i] = conv(blocks[2 * i], blocks[2 * i + 1]);
+            } else {
+                blocks_next[i] = std::move(blocks[2 * i]);
+            }
+
+            if (blocks_next[i][T]) {
+                is_possible = true;
+            }
+        }
+
+        if (is_possible) {
+            return;
+        }
+
+        blocks = std::move(blocks_next);
+    }
 }
 
 bool solve_parallel(const std::vector<uint32_t>& w, const uint32_t T) {
@@ -124,7 +130,7 @@ bool solve_parallel(const std::vector<uint32_t>& w, const uint32_t T) {
 
     conv_init(T_ceil);
 
-    solve(w, T, T_ceil, 0, std::size(w), is_possible);
+    solve_iterative(w, T, T_ceil, is_possible);
 
     return is_possible;
 }
