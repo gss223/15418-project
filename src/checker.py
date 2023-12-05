@@ -21,11 +21,16 @@ valid = valid and (version == '-pisinger' or version == '-openmp')
 if not valid:
     print("Usage: ./checker.py threads scene -pisinger/-openmp")
     exit(-1)
+
+
 prog = ""
 if version=='-pisinger':
     prog = "pisinger_test"
 elif version=='-openmp':
     prog = "parallel_cpu_test"
+
+# set num threads
+os.environ['OMP_NUM_THREADS'] = threads
 
 
 def compare(actual, ref):
