@@ -54,4 +54,4 @@ object:
 	@mkdir -p $(OBJDIR)
 
 clean:
-	rm -f bin/* $(OBJDIR)/*.o
+	rm -f bin/* $(OBJDIR)/*.o logs/*
