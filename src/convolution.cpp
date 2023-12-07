@@ -1,3 +1,4 @@
+#include <array>
 #include <complex>
 #include <vector>
 #include <bit>
@@ -7,6 +8,7 @@
 
 std::vector<std::complex<double>> roots, roots_inv;
 std::vector<uint32_t> reversed;
+std::vector<std::array<uint32_t, 2>> swaps;
 uint32_t max_n, half, possible_threshold;
 
 // T_ceil is the target rounded up to nearest power of 2
@@ -24,6 +26,12 @@ void conv_init(const uint32_t T_ceil) {
 #pragma omp parallel for
     for (uint32_t i = 0; i < max_n; i++) {
         reversed[i] = reverse_bits(i, bit_count);
+    }
+
+    for (uint32_t i = 0; i < max_n; i++) {
+        if (i < reversed[i]) {
+            swaps.push_back({i, reversed[i]});
+        }
     }
     
     const double theta = 2 * M_PI / T_ceil, theta_inv = theta * -1;
@@ -70,11 +78,9 @@ void fft(std::vector<std::complex<double>>& v) {
 
 template<bool inverse>
 void fft_iterative(std::vector<std::complex<double>>& v) {
-#pragma omp parallel for schedule(dynamic)
-    for (uint32_t i = 0; i < max_n; i++) {
-        if (i < reversed[i]) {
-            swap(v[i], v[reversed[i]]);
-        }
+#pragma omp parallel for schedule(static)
+    for (const auto& [i, j] : swaps) {
+        swap(v[i], v[j]);
     }
 
     for (uint32_t len = 2; len <= max_n; len *= 2) {
