@@ -14,7 +14,7 @@ uint32_t max_n, half, possible_threshold;
 // T_ceil is the target rounded up to nearest power of 2
 void conv_init(const uint32_t T_ceil) {
     max_n = T_ceil;
-    half = max_n / 2;
+    half = max_n >>= 1;
     possible_threshold = 0.5 * half;
 
     roots.resize(half);
@@ -43,6 +43,7 @@ void conv_init(const uint32_t T_ceil) {
     }
 }
 
+/*
 template<bool inverse>
 void fft(std::vector<std::complex<double>>& v) {
     const int n = std::size(v), half = n / 2;
@@ -75,6 +76,7 @@ void fft(std::vector<std::complex<double>>& v) {
         }
     }
 }
+*/
 
 template<bool inverse>
 void fft_iterative(std::vector<std::complex<double>>& v) {
@@ -83,22 +85,22 @@ void fft_iterative(std::vector<std::complex<double>>& v) {
         swap(v[i], v[j]);
     }
 
-    for (uint32_t len = 2; len <= max_n; len *= 2) {
+    for (uint32_t len = 2, shift = max_n >> 1, half_len = len >> 1; len <= max_n; len *= 2, shift >>= 1, half_len *= 2) {
 #pragma omp parallel for
         for (uint32_t chunk_start = 0; chunk_start < max_n; chunk_start += len) {
-            for (uint32_t i = 0; i < len / 2; i++) {
+            for (uint32_t i = 0; i < half_len; i++) {
                 std::complex<double> w;
 
                 if constexpr (inverse) {
-                    w = roots_inv[max_n / len * i];
+                    w = roots_inv[shift * i];
                 } else {
-                    w = roots[max_n / len * i];
+                    w = roots[shift * i];
                 }
 
-                std::complex<double> y0 = v[chunk_start + i], y1 = w * v[chunk_start + i + len / 2];
+                std::complex<double> y0 = v[chunk_start + i], y1 = w * v[chunk_start + i + half_len];
 
                 v[chunk_start + i] = y0 + y1;
-                v[chunk_start + i + len / 2] = y0 - y1;
+                v[chunk_start + i + half_len] = y0 - y1;
             }
         }
     }
