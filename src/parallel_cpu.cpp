@@ -1,11 +1,11 @@
 #include <bit>
+#include <iostream>
 
 #include "parallel_cpu.h"
 #include "convolution.h"
 #include "naive.h"
 
-// TODO: replace atcoder's fft and parallelize it
-
+/*
 std::vector<uint32_t> solve_sequential(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t T_ceil, const uint32_t l, const uint32_t r, bool& is_possible) {
     const uint32_t len = r - l;
 
@@ -81,6 +81,7 @@ std::vector<uint32_t> solve(const std::vector<uint32_t>& w, const uint32_t T, co
 
     return convolution;
 }
+*/
 
 void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t T_ceil, bool& is_possible) {
     const int n = std::size(w);
@@ -91,7 +92,7 @@ void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, const uin
 #pragma omp parallel for
     for (uint32_t i = 0; i < num_blocks; i++) {
         const int l = USE_NAIVE * i, r = std::min(l + USE_NAIVE, n);
-        blocks[i] = solve_sequential(w, T, T_ceil, l, r, is_possible);
+        blocks[i] = solve_naive(w, T, T_ceil, l, r, is_possible);
 
         is_possible = is_possible || blocks[i][T];
     }
@@ -104,7 +105,7 @@ void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, const uin
 #pragma omp parallel for
         for (uint32_t i = 0; i < blocks_next_size; i++) {
             if (2 * i + 1 < std::size(blocks)) {
-                blocks_next[i] = conv(blocks[2 * i], blocks[2 * i + 1]);
+                blocks_next[i] = conv(std::move(blocks[2 * i]), std::move(blocks[2 * i + 1]));
             } else {
                 blocks_next[i] = std::move(blocks[2 * i]);
             }
