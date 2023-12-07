@@ -7,12 +7,13 @@
 
 std::vector<std::complex<double>> roots, roots_inv;
 std::vector<uint32_t> reversed;
-uint32_t max_n, half;
+uint32_t max_n, half, possible_threshold;
 
 // T_ceil is the target rounded up to nearest power of 2
 void conv_init(const uint32_t T_ceil) {
     max_n = T_ceil;
     half = max_n / 2;
+    possible_threshold = 0.5 * half;
 
     roots.resize(half);
     roots_inv.resize(half);
@@ -95,13 +96,6 @@ void fft_iterative(std::vector<std::complex<double>>& v) {
             }
         }
     }
-
-    if constexpr (inverse) {
-#pragma omp parallel for
-        for (auto& x : v) {
-            x /= max_n;
-        }
-    }
 }
 
 std::vector<uint32_t> conv(std::vector<uint32_t> a, std::vector<uint32_t> b) {
@@ -110,15 +104,17 @@ std::vector<uint32_t> conv(std::vector<uint32_t> a, std::vector<uint32_t> b) {
     fft_iterative<false>(ca);
     fft_iterative<false>(cb);
 
+#pragma omp parallel for schedule(static)
     for (uint32_t i = 0; i < max_n; i++) {
         ca[i] *= cb[i];
     }
 
-    fft_iterative<true>(cb);
+    fft_iterative<true>(ca);
 
     std::vector<uint32_t> res(max_n);
+#pragma omp parallel for schedule(static)
     for (uint32_t i = 0; i < max_n; i++) {
-        res[i] = (ca[i].real() > 0);
+        res[i] = ca[i].real() >= possible_threshold;
     }
 
     return res;
