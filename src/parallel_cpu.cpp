@@ -92,6 +92,8 @@ void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, const uin
     for (uint32_t i = 0; i < num_blocks; i++) {
         const int l = USE_NAIVE * i, r = std::min(l + USE_NAIVE, n);
         blocks[i] = solve_sequential(w, T, T_ceil, l, r, is_possible);
+
+        is_possible = is_possible || blocks[i][T];
     }
 
     const int num_iterations = std::bit_width(num_blocks) - 1;
@@ -107,9 +109,7 @@ void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, const uin
                 blocks_next[i] = std::move(blocks[2 * i]);
             }
 
-            if (blocks_next[i][T]) {
-                is_possible = true;
-            }
+            is_possible = is_possible || blocks_next[i][T];
         }
 
         blocks = std::move(blocks_next);
