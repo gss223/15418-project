@@ -7,35 +7,30 @@
 void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t T_ceil, bool& is_possible) {
     const int n = std::size(w);
     const uint32_t num_blocks = (n + NAIVE_SIZE - 1) / NAIVE_SIZE;
+    const int num_iterations = std::bit_width(num_blocks) - 1;
 
-    std::vector<std::vector<uint32_t>> blocks(num_blocks);
+    std::vector blocks(num_iterations + 1, std::vector<std::vector<uint32_t>>(num_blocks));
 
 #pragma omp parallel for
     for (uint32_t i = 0; i < num_blocks; i++) {
         const int l = NAIVE_SIZE * i, r = std::min(l + NAIVE_SIZE, n);
-        blocks[i] = solve_naive(w, T, T_ceil, l, r, is_possible);
-
-        is_possible = is_possible || blocks[i][T];
+        blocks[0][i] = solve_naive(w, T, T_ceil, l, r, is_possible);
     }
 
-    const int num_iterations = std::bit_width(num_blocks) - 1;
-    for (int iter = 0; iter < num_iterations; iter++) {
-        const uint32_t blocks_next_size = (std::size(blocks) + 1) / 2;
-        std::vector<std::vector<uint32_t>> blocks_next(blocks_next_size);
+    for (int iter = 0, iter_num_blocks = num_blocks; iter < num_iterations; iter++, iter_num_blocks = (iter_num_blocks + 1) / 2) {
+        const int next_iter_num_blocks = (iter_num_blocks + 1) / 2;
 
 #pragma omp parallel for
-        for (uint32_t i = 0; i < blocks_next_size; i++) {
-            if (2 * i + 1 < std::size(blocks)) {
-                blocks_next[i] = conv(std::move(blocks[2 * i]), std::move(blocks[2 * i + 1]));
+        for (int i = 0; i < next_iter_num_blocks; i++) {
+            if (2 * i + 1 < iter_num_blocks) {
+                blocks[iter + 1][i] = conv(std::move(blocks[iter][2 * i]), std::move(blocks[iter][2 * i + 1]));
             } else {
-                blocks_next[i] = std::move(blocks[2 * i]);
+                blocks[iter + 1][i] = std::move(blocks[iter][2 * i]);
             }
-
-            is_possible = is_possible || blocks_next[i][T];
         }
-
-        blocks = std::move(blocks_next);
     }
+
+    is_possible = blocks[num_iterations][0][T];
 }
 
 bool solve_parallel(const std::vector<uint32_t>& w, const uint32_t T) {
