@@ -33,12 +33,12 @@ void conv_init(const uint32_t T_ceil) {
         }
     }
     
-    const double theta = 2 * M_PI / T_ceil, theta_inv = theta * -1;
+    const double theta = 2 * M_PI / T_ceil;
 
 #pragma omp parallel for
     for (uint32_t i = 0; i < half; i++) {
         roots[i] = std::polar(1.0, theta * i);
-        roots_inv[i] = std::polar(1.0, theta_inv * i);
+        roots_inv[i] = -roots[i];
     }
 }
 
