@@ -9,13 +9,12 @@
 std::vector<std::complex<double>> roots, roots_inv;
 std::vector<uint32_t> reversed;
 std::vector<std::array<uint32_t, 2>> swaps;
-uint32_t max_n, half, possible_threshold;
+uint32_t max_n, half;
 
 // T_ceil is the target rounded up to nearest power of 2
 void conv_init(const uint32_t T_ceil) {
     max_n = T_ceil;
-    half = max_n >>= 1;
-    possible_threshold = 0.5 * half;
+    half = max_n >> 1;
 
     roots.resize(half);
     roots_inv.resize(half);
@@ -43,49 +42,13 @@ void conv_init(const uint32_t T_ceil) {
     }
 }
 
-/*
-template<bool inverse>
-void fft(std::vector<std::complex<double>>& v) {
-    const int n = std::size(v), half = n / 2;
-
-    if (n == 1) {
-        return;
-    }
-
-    std::vector<std::complex<double>> even(n / 2), odd(n / 2);
-    for (int i = 0; i < half; i++) {
-        even[i] = v[2 * i];
-        odd[i] = v[2 * i + 1];
-    }
-
-    fft<inverse>(even);
-    fft<inverse>(odd);
-
-    const int roots_shift = max_n / n;
-
-    for (int i = 0; i < half; i++) {
-        if constexpr (inverse) {
-            v[i] = even[i] + roots_inv[i * roots_shift] * odd[i];
-            v[i + half] = even[i] - roots_inv[i * roots_shift] * odd[i];
-
-            v[i] /= 2;
-            v[i + half] /= 2;
-        } else {
-            v[i] = even[i] + roots[i * roots_shift] * odd[i];
-            v[i + half] = even[i] - roots[i * roots_shift] * odd[i];
-        }
-    }
-}
-*/
-
 template<bool inverse>
 void fft_iterative(std::vector<std::complex<double>>& v) {
-#pragma omp parallel for schedule(static)
     for (const auto& [i, j] : swaps) {
         swap(v[i], v[j]);
     }
 
-    for (uint32_t len = 2, shift = max_n >> 1, half_len = len >> 1; len <= max_n; len *= 2, shift >>= 1, half_len *= 2) {
+    for (uint32_t len = 2, shift = half, half_len = len >> 1; len <= max_n; len *= 2, shift >>= 1, half_len *= 2) {
 #pragma omp parallel for
         for (uint32_t chunk_start = 0; chunk_start < max_n; chunk_start += len) {
             for (uint32_t i = 0; i < half_len; i++) {
@@ -122,7 +85,7 @@ std::vector<uint32_t> conv(std::vector<uint32_t> a, std::vector<uint32_t> b) {
     std::vector<uint32_t> res(max_n);
 #pragma omp parallel for schedule(static)
     for (uint32_t i = 0; i < max_n; i++) {
-        res[i] = ca[i].real() >= possible_threshold;
+        res[i] = (ca[i].real() >= half);
     }
 
     return res;

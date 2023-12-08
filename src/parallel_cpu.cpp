@@ -1,5 +1,4 @@
 #include <bit>
-#include <iostream>
 
 #include "parallel_cpu.h"
 #include "convolution.h"
