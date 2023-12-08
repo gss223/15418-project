@@ -32,8 +32,8 @@ namespace ispc { /* namespace */
 #if defined(__cplusplus) && (! defined(__ISPC_NO_EXTERN_C) || !__ISPC_NO_EXTERN_C )
 extern "C" {
 #endif // __cplusplus
-    extern void butterfly(float * re, float * im, float * w_re, float * w_im, uint32_t half_len);
-    extern void multiply(float * a_re, float * a_im, float * b_re, float * b_im, uint32_t len);
+    extern void butterfly(float * re, float * im, float * w_re, float * w_im, const uint32_t half_len);
+    extern void multiply(float * a_re, float * a_im, const float * b_re, const float * b_im, const uint32_t len);
 #if defined(__cplusplus) && (! defined(__ISPC_NO_EXTERN_C) || !__ISPC_NO_EXTERN_C )
 } /* end extern C */
 #endif // __cplusplus

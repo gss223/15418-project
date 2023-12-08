@@ -1,4 +1,4 @@
-export void butterfly(uniform float re[], uniform float im[], uniform float w_re[], uniform float w_im[], uniform uint32 half_len) {
+export void butterfly(uniform float re[], uniform float im[], uniform float w_re[], uniform float w_im[], uniform const uint32 half_len) {
     foreach (i = 0 ... half_len) {
         float a_re = re[i];
         float a_im = im[i];
@@ -14,7 +14,7 @@ export void butterfly(uniform float re[], uniform float im[], uniform float w_re
     }
 }
 
-export void multiply(uniform float a_re[], uniform float a_im[], uniform float b_re[], uniform float b_im[], uniform uint32 len) {
+export void multiply(uniform float a_re[], uniform float a_im[], uniform const float b_re[], uniform const float b_im[], uniform const uint32 len) {
     foreach (i = 0 ... len) {
         float new_re = a_re[i] * b_re[i] - a_im[i] * b_im[i];
         float new_im = a_re[i] * b_im[i] + a_im[i] * b_re[i];
