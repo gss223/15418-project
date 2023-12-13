@@ -6,6 +6,8 @@
 #include "timer.h"
 
 int main() {
+    std::ios_base::sync_with_stdio(false);
+
     int N, T;
     std::cin >> N >> T;
 
