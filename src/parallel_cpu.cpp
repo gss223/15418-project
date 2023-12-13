@@ -1,5 +1,3 @@
-#include <bit>
-
 #include "parallel_cpu.h"
 #include "convolution.h"
 #include "naive.h"
@@ -7,7 +5,7 @@
 void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, bool& is_possible) {
     const int n = std::size(w);
     const uint32_t num_blocks = (n + NAIVE_SIZE - 1) / NAIVE_SIZE;
-    const int num_iterations = std::bit_width(num_blocks) - 1;
+    const int num_iterations = std::__lg(num_blocks);
 
     std::vector blocks(num_iterations + 1, std::vector<std::vector<uint32_t>>(num_blocks));
 

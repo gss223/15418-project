@@ -1,11 +1,11 @@
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++20 -Iinclude
+CXXFLAGS = -Wall -Wextra -std=c++17 -Iinclude
 
 ISPC = ispc
 ISPCFLAGS = -O3 --target=avx2-i32x8 --arch=x86-64
 
 ifeq ($(mode),release)
-	CXXFLAGS += -O3 -mavx2
+	CXXFLAGS += -O3 -mavx2 -mlzcnt -mbmi -mbmi2
 	ISPCFLAGS += -O3
 else ifeq ($(mode),debug)
 	CXXFLAGS += -g -O0 -D_GLIBCXX_DEBUG

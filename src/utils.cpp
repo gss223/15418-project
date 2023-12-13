@@ -15,3 +15,8 @@ uint32_t reverse_bits(const uint32_t a, const uint32_t cnt) {
 
     return res >> (32 - cnt);
 }
+
+uint32_t bit_ceil(const uint32_t x) {
+    const int pw = std::__lg(x);
+    return 1U << std::__lg(x + ((1U << pw) - 1));
+}

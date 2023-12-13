@@ -1,7 +1,6 @@
 #include <array>
 #include <complex>
 #include <vector>
-#include <bit>
 
 #include "convolution.h"
 #include "butterfly.h"
@@ -14,10 +13,10 @@ uint32_t result_len, n, half;
 
 void conv_init(const uint32_t T) {
     result_len = T + 1;
-    n = std::bit_ceil(2 * T);
+    n = bit_ceil(2 * T);
     half = n >> 1;
 
-    const int bit_count = std::bit_width(n);
+    const int bit_count = std::__lg(n) + 1;
 
     w_re.resize(bit_count);
     w_im.resize(bit_count);
