@@ -56,7 +56,14 @@ void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, bool& is_
 bool solve_parallel(const std::vector<uint32_t>& w, const uint32_t T) {
     bool is_possible = false;
 
+    Timer init_timer;
+    init_timer.start();
+
     conv_init(T);
+
+    init_timer.end();
+
+    std::cout << "Time spent on initialization: " << std::fixed << std::setprecision(10) << (init_timer.get_duration<std::chrono::microseconds>() / 1e6) << '\n';
     solve_iterative(w, T, is_possible);
 
     return is_possible;
