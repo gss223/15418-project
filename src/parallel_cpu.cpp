@@ -1,20 +1,11 @@
+#include <iostream>
+#include <iomanip>
+
 #include "parallel_cpu.h"
 #include "convolution.h"
-
-std::vector<uint32_t> solve_naive(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t l, const uint32_t r) {
-    std::vector<uint32_t> dp(T + 1);
-    dp[0] = 1;
-
-    for (uint32_t i = l; i < r; i++) {
-        const uint32_t x = w[i];
-
-        for (uint32_t j = T; j >= x; j--) {
-            dp[j] = dp[j] || dp[j - x];
-        }
-    }
-
-    return dp;
-}
+#include "timer.h"
+#include "naive.h"
+#include "utils.h"
 
 void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, bool& is_possible) {
     const int n = std::size(w);
@@ -23,26 +14,38 @@ void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, bool& is_
 
     std::vector blocks(num_iterations + 1, std::vector<std::vector<uint32_t>>(num_blocks));
 
+    Timer initial_block_timer;
+    initial_block_timer.start();
+
 #pragma omp parallel for
     for (uint32_t i = 0; i < num_blocks; i++) {
         const int l = NAIVE_SIZE * i, r = std::min(l + NAIVE_SIZE, n);
         blocks[0][i] = solve_naive(w, T, l, r);
     }
 
+    initial_block_timer.end();
+
+    std::cout << "Time spent naively solving subarrays: " << std::fixed << std::setprecision(10) << (initial_block_timer.get_duration<std::chrono::microseconds>() / 1e6) << '\n';
+
+    Timer convolution_timer;
+    convolution_timer.start();
+
     for (int iter = 0, iter_num_blocks = num_blocks; iter < num_iterations; iter++, iter_num_blocks = (iter_num_blocks + 1) / 2) {
         const int next_iter_num_blocks = (iter_num_blocks + 1) / 2;
 
+#pragma omp parallel for
         for (int i = 0; i < next_iter_num_blocks; i++) {
             if (2 * i + 1 < iter_num_blocks) {
-#pragma omp task shared(blocks)
                 blocks[iter + 1][i] = conv(std::move(blocks[iter][2 * i]), std::move(blocks[iter][2 * i + 1]));
+
             } else {
                 blocks[iter + 1][i] = std::move(blocks[iter][2 * i]);
             }
         }
-
-#pragma omp taskwait
     }
+
+    convolution_timer.end();
+    std::cout << "Time spent combining subarray solutions: " << std::fixed << std::setprecision(10) << (convolution_timer.get_duration<std::chrono::microseconds>() / 1e6) << '\n';
 
     is_possible = blocks[num_iterations][0][T];
 }

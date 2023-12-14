@@ -22,10 +22,11 @@ float* alloc(uint32_t sz) {
     return res;
 }
 
-void conv_init(const uint32_t T) {
+void conv_init(uint32_t T) {
+    T = bit_ceil(T);
     result_len = T + 1;
-    n = bit_ceil(2 * T);
-    half = n >> 1;
+    n = 2 * T;
+    half = T;
 
     const int bit_count = std::__lg(n) + 1;
 

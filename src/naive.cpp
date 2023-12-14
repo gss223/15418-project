@@ -2,7 +2,8 @@
 #include "timer.h"
 #include "utils.h"
 
-std::vector<uint32_t> solve_naive(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t l, const uint32_t r) {
+std::vector<uint32_t> solve_naive(const std::vector<uint32_t>& w, uint32_t T, const uint32_t l, const uint32_t r) {
+    T = bit_ceil(T);
     std::vector<uint32_t> dp(T + 1);
     dp[0] = true;
 
