@@ -2,7 +2,7 @@
 #include "timer.h"
 #include "utils.h"
 
-std::vector<uint32_t> solve_naive(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t l, const uint32_t r, bool& is_possible) {
+std::vector<uint32_t> solve_naive(const std::vector<uint32_t>& w, const uint32_t T, const uint32_t l, const uint32_t r) {
     std::vector<uint32_t> dp(T + 1);
     dp[0] = true;
 
@@ -14,14 +14,11 @@ std::vector<uint32_t> solve_naive(const std::vector<uint32_t>& w, const uint32_t
         }
     }
 
-    is_possible = is_possible || dp[T];
     return dp;
 }
 
 bool solve_naive(const std::vector<uint32_t>& w, const uint32_t T) {
-    bool is_possible = false;
+    auto dp = solve_naive(w, T, 0, std::size(w));
 
-    solve_naive(w, bit_ceil(T), 0, std::size(w), is_possible);
-
-    return is_possible;
+    return dp[T];
 }
