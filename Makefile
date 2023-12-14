@@ -17,8 +17,8 @@ BINDIR = bin
 
 .PHONY: all clean object bin
 
-parallel_cpu_test: parallel_cpu.o  convolution.o utils.o parallel_cpu_test.o naive.o bin
-	$(CXX) $(CXXFLAGS) -fopenmp -o bin/parallel_cpu_test $(OBJDIR)/parallel_cpu.o $(OBJDIR)/convolution.o $(OBJDIR)/utils.o $(OBJDIR)/parallel_cpu_test.o $(OBJDIR)/naive.o
+parallel_cpu_test: parallel_cpu.o  convolution.o utils.o parallel_cpu_test.o bin
+	$(CXX) $(CXXFLAGS) -fopenmp -o bin/parallel_cpu_test $(OBJDIR)/parallel_cpu.o $(OBJDIR)/convolution.o $(OBJDIR)/utils.o $(OBJDIR)/parallel_cpu_test.o
 
 naive_test: naive_test.o naive.o utils.o bin
 	$(CXX) $(CXXFLAGS) -o $(BINDIR)/naive_test $(OBJDIR)/naive_test.o $(OBJDIR)/naive.o $(OBJDIR)/utils.o
