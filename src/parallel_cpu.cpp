@@ -7,19 +7,22 @@
 #include "naive.h"
 #include "utils.h"
 
+#include "omp.h"
+
 void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, bool& is_possible) {
     const int n = std::size(w);
-    const uint32_t num_blocks = (n + NAIVE_SIZE - 1) / NAIVE_SIZE;
+    const uint32_t num_blocks = omp_get_max_threads();
     const int num_iterations = std::__lg(num_blocks);
+    const int block_size = (n + num_blocks - 1) / num_blocks;
 
     std::vector blocks(num_iterations + 1, std::vector<std::vector<uint32_t>>(num_blocks));
 
     Timer initial_block_timer;
     initial_block_timer.start();
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
     for (uint32_t i = 0; i < num_blocks; i++) {
-        const int l = NAIVE_SIZE * i, r = std::min(l + NAIVE_SIZE, n);
+        const int l = block_size * i, r = std::min(l + block_size, n);
         blocks[0][i] = solve_naive(w, T, l, r);
     }
 
@@ -33,7 +36,7 @@ void solve_iterative(const std::vector<uint32_t>& w, const uint32_t T, bool& is_
     for (int iter = 0, iter_num_blocks = num_blocks; iter < num_iterations; iter++, iter_num_blocks = (iter_num_blocks + 1) / 2) {
         const int next_iter_num_blocks = (iter_num_blocks + 1) / 2;
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
         for (int i = 0; i < next_iter_num_blocks; i++) {
             if (2 * i + 1 < iter_num_blocks) {
                 blocks[iter + 1][i] = conv(std::move(blocks[iter][2 * i]), std::move(blocks[iter][2 * i + 1]));
