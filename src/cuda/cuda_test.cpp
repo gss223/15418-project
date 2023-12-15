@@ -24,6 +24,7 @@ int main() {
     bool is_possible = subsetSumExists(w, T);
 
     timer.end();
+    //printCudaInfo();
 
     std::cout << is_possible << '\n' << std::fixed << std::setprecision(10) << (timer.get_duration<std::chrono::microseconds>() / 1e6) << '\n';
 }

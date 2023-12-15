@@ -5,6 +5,6 @@ std::vector<uint64_t> solve_naive(const std::vector<uint32_t>& w, const uint32_t
 
 bool solve_bits(const std::vector<uint32_t>& w, const uint32_t T);
 
-void setBitInArray(std::vector<uint64_t>& d, int index);
+void set_bit(std::vector<uint64_t>& d, int index);
 
-int tstBitInArray(const std::vector<uint64_t>& d, int index);
+int test_bit(const std::vector<uint64_t>& d, int index);

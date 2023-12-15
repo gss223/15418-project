@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <cuda.h>
 #include <vector>
+#include <iostream>
+#include <iomanip>
 
 __global__ void subsetSumKernelRow(uint32_t* dp_current, uint32_t* dp_previous, const uint32_t* set, int i, uint32_t sum) {
     int j = blockIdx.x * blockDim.x + threadIdx.x;
