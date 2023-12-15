@@ -11,10 +11,8 @@
 #define NAIVE_SIZE 2048
 
 __global__ void subsetSumKernelDp(uint32_t *w, uint32_t *global_dp, const int n, uint32_t sum, uint32_t *blocks) {
-    //uint32_t j = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t T = sum+1;
 
-    // Calculate starting indices for dp_current and dp_previous in the global array
     uint32_t currentIdx = blockIdx.x * (T);
     uint32_t previousIdx = (1 - blockIdx.x % 2) * T;
 
@@ -28,9 +26,6 @@ __global__ void subsetSumKernelDp(uint32_t *w, uint32_t *global_dp, const int n,
     uint32_t l = NAIVE_SIZE * blockIdx.x;
     uint32_t r = l + NAIVE_SIZE;
     r = (r < n) ? r : (n);
-    /*if (blockIdx.x==0){
-        printf("l %d r%d \n",l, r);
-    }*/
     if (threadIdx.x == 0){
         global_dp[previousIdx]=1;
     }
@@ -79,7 +74,7 @@ __global__ void pointwiseMultiply(cufftDoubleComplex *input1,
     if (index < n) {
         cufftDoubleComplex a = input1[index];
         cufftDoubleComplex b = input2[index];
-        result[index] = make_cuDoubleComplex(a.x * b.x, 0.0);//make_cuDoubleComplex(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+        result[index] = make_cuDoubleComplex(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
     }
 }
 
