@@ -8,8 +8,8 @@
 std::vector<uint64_t> solve_naive(const std::vector<uint32_t>& w, uint32_t T, const uint32_t l, const uint32_t r) {
     T = bit_ceil(T);
     int num_ints; //number of words needed
-    num_ints = static_cast<int>(std::ceil(static_cast<double>(T) / 64.0));
-    std::vector<uint64_t> dp(num_ints + 1);
+    num_ints = static_cast<int>(std::ceil(static_cast<double>(T+1) / 64.0));
+    std::vector<uint64_t> dp(num_ints);
     setBitInArray(dp,0);
 
     for (uint32_t i = l; i < r; i++) {
