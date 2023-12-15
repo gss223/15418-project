@@ -51,7 +51,7 @@ assert ret == 0, f'ERROR -- {prog} exited with errors'
 naive_file = f"logs/{scene}_naive_test.log"
 cmd = f'bin/naive_test < inputs/{scene} > {naive_file}'
 ret = os.system(cmd)
-assert ret == 0, f'ERROR -- naive-test exited with errors'
+assert ret == 0, f'ERROR -- naive_test exited with errors'
 
 compare(output_file, naive_file)
 t = float(open(output_file).readlines()[1])
