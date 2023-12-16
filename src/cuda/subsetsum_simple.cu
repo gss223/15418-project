@@ -19,11 +19,9 @@ __global__ void subsetSumKernelRow(uint32_t* dp_current, uint32_t* dp_previous, 
 bool subsetSumExists(const std::vector<uint32_t>&w, uint32_t T) {
     int n = w.size();
 
-    // Allocate memory on the host
     std::vector<uint32_t> dp(2 * (T + 1), 0);
     dp[0] = 1;
 
-    // Allocate memory on the device
     uint32_t *d_dp_current;
     uint32_t *d_dp_previous;
     cudaMalloc(&d_dp_current, (T + 1) * sizeof(uint32_t));
@@ -34,24 +32,20 @@ bool subsetSumExists(const std::vector<uint32_t>&w, uint32_t T) {
     cudaMalloc(&d_w, n * sizeof(uint32_t));
     cudaMemcpy(d_w, w.data(), n * sizeof(uint32_t), cudaMemcpyHostToDevice);
 
-    // Define the grid and block dimensions
+
     dim3 dimBlock(256);
     dim3 dimGrid((T + 256 - 1) / 256);
 
-    // Launch the kernel for each row
     for (int i = 1; i <= n; ++i) {
         subsetSumKernelRow<<<dimGrid, dimBlock>>>(d_dp_current, d_dp_previous, d_w, i, T);
         cudaDeviceSynchronize();
 
-        // Swap the rows
         std::swap(d_dp_current, d_dp_previous);
     }
     cudaMemcpy(dp.data(), d_dp_previous, (T + 1) * sizeof(uint32_t), cudaMemcpyDeviceToHost);
 
-    // Check the result
     bool result = dp[T];
 
-    // Free memory
     cudaFree(d_dp_current);
     cudaFree(d_dp_previous);
     cudaFree(d_w);

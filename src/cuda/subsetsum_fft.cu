@@ -6,9 +6,10 @@
 #include <cstdint>
 #include <cuda.h>
 #include <cufft.h>
+#include "timer.h"
 
-#define BLOCKSIZE 256
-#define NAIVE_SIZE 2048
+#define BLOCKSIZE 512
+#define NAIVE_SIZE 1024
 
 __global__ void subsetSumKernelDp(uint32_t *w, uint32_t *global_dp, const int n, uint32_t sum, uint32_t *blocks) {
     uint32_t T = sum+1;
@@ -33,10 +34,10 @@ __global__ void subsetSumKernelDp(uint32_t *w, uint32_t *global_dp, const int n,
     for (uint32_t i = l; i < r; i++) {
         const uint32_t x = w[i];
 
-        __syncthreads(); // Synchronize before starting to read/write
+        __syncthreads();
 
         for (uint32_t dp_block = start_index; dp_block < end_index; dp_block++) {
-            // Compute dp_current based on dp_previous
+
             if (dp_block >= x) {
                 global_dp[currentIdx + dp_block] = global_dp[previousIdx + dp_block] || global_dp[previousIdx + dp_block - x];
             } else {
@@ -44,17 +45,16 @@ __global__ void subsetSumKernelDp(uint32_t *w, uint32_t *global_dp, const int n,
             }
         }
 
-        __syncthreads(); // Synchronize after writing to global memory
+        __syncthreads();
 
-        // Swap logic: switch currentIdx and previousIdx for the next iteration
         if (i < (r-1)) {
-            // Swap the indices
+
             uint32_t temp = currentIdx;
             currentIdx = previousIdx;
             previousIdx = temp;
         }
 
-        __syncthreads(); // Synchronize before starting the next iteration
+        __syncthreads(); 
 
         
     }
@@ -80,43 +80,47 @@ __global__ void pointwiseMultiply(cufftDoubleComplex *input1,
 
 std::vector<std::complex<double>> fftConvolutionCuFFT(const std::vector<std::complex<double>>& input1,
                          const std::vector<std::complex<double>>& input2) {
-    int n = input1.size(); // Assuming input1 and input2 are the same size
+    int n = input1.size(); 
     std::vector<std::complex<double>> result(n);
+    Timer memory_timer;
+    memory_timer.start();
 
-    // Allocate memory on the device
     cufftDoubleComplex *d_input1, *d_input2, *d_result;
     cudaMalloc(&d_input1, n * sizeof(cufftDoubleComplex));
     cudaMalloc(&d_input2, n * sizeof(cufftDoubleComplex));
     cudaMalloc(&d_result, n * sizeof(cufftDoubleComplex));
 
-    // Copy host data to device
+
     cudaMemcpy(d_input1, input1.data(), n * sizeof(cufftDoubleComplex), cudaMemcpyHostToDevice);
     cudaMemcpy(d_input2, input2.data(), n * sizeof(cufftDoubleComplex), cudaMemcpyHostToDevice);
+    memory_timer.end();
+    Timer actual_ops;
+    actual_ops.start();
 
-    // Create a cuFFT plan
     cufftHandle plan;
     cufftPlan1d(&plan, n, CUFFT_Z2Z, 1);
 
-    // Execute forward FFT
     cufftExecZ2Z(plan, d_input1, d_input1, CUFFT_FORWARD);
     cufftExecZ2Z(plan, d_input2, d_input2, CUFFT_FORWARD);
 
-    // Perform point-wise multiplication
     int threadsPerBlock = 256;
     int blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
     pointwiseMultiply<<<blocksPerGrid, threadsPerBlock>>>(d_input1, d_input2, d_result, n);
 
-    // Execute inverse FFT
     cufftExecZ2Z(plan, d_result, d_result, CUFFT_INVERSE);
+    actual_ops.end();
+    Timer more_mem;
+    more_mem.start();
 
-    // Copy result back to host
     cudaMemcpy(result.data(), d_result, n * sizeof(cufftDoubleComplex), cudaMemcpyDeviceToHost);
 
-    // Clean up
     cufftDestroy(plan);
     cudaFree(d_input1);
     cudaFree(d_input2);
     cudaFree(d_result);
+    more_mem.end();
+    std::cout << "Time spent on fft ops: " << std::fixed << std::setprecision(10) << (actual_ops.get_duration<std::chrono::microseconds>() / 1e6) << '\n';
+    std::cout << "Time spent on memory operations: " << std::fixed << std::setprecision(10) << (more_mem.get_duration<std::chrono::microseconds>() / 1e6 + memory_timer.get_duration<std::chrono::microseconds>() / 1e6 ) << '\n';
     return result;
 }
 
@@ -139,6 +143,9 @@ std::vector<std::vector<std::complex<double>>> convertToComplex2D(
 }
 
 bool solve_fft(const std::vector<uint32_t>& w, const uint32_t T){
+
+    Timer init_timer;
+    init_timer.start();
     const int n = std::size(w);
     uint32_t num_blocks = (n + NAIVE_SIZE - 1) / NAIVE_SIZE;
     //std::cout << "numblocks " << num_blocks << "\n";
@@ -162,9 +169,13 @@ bool solve_fft(const std::vector<uint32_t>& w, const uint32_t T){
     uint32_t* d_blocks;
     cudaMalloc(&d_blocks, num_blocks*(T+1)*sizeof(uint32_t));
 
-    
+    init_timer.end();
+    Timer subsetkernel_timer;
+    subsetkernel_timer.start();
     subsetSumKernelDp<<<num_blocks, BLOCKSIZE>>>(d_w, global_dp, n, T, d_blocks);
-    
+    subsetkernel_timer.end();
+    Timer middleops_timer;
+    middleops_timer.start();
     cudaMemcpy(blocks.data(), d_blocks, num_blocks*(T+1) * sizeof(uint32_t), cudaMemcpyDeviceToHost);
     cudaFree(d_blocks);
     cudaFree(global_dp);
@@ -174,7 +185,9 @@ bool solve_fft(const std::vector<uint32_t>& w, const uint32_t T){
     std::vector fft_outputs(num_iterations + 1, std::vector<std::vector<std::complex<double>>>(num_blocks));
     fft_outputs[0] = convertToComplex2D(blocks, num_blocks, T+1);
     //std::cout << fft_outputs[0][0][5];
-    
+    middleops_timer.end();
+    Timer fft_merge_timer;
+    fft_merge_timer.start();
     for (int iter = 0, iter_num_blocks = num_blocks; iter < num_iterations; iter++, iter_num_blocks = (iter_num_blocks + 1) / 2) {
         const int next_iter_num_blocks = (iter_num_blocks + 1) / 2;
 
@@ -187,6 +200,7 @@ bool solve_fft(const std::vector<uint32_t>& w, const uint32_t T){
             }
         }
     }
+    fft_merge_timer.end();
 
     
 
@@ -194,8 +208,10 @@ bool solve_fft(const std::vector<uint32_t>& w, const uint32_t T){
 
     bool is_possible = (fft_outputs[num_iterations][0][T].real()>0);
 
-    
-    
+    std::cout << "Time spent on fft_merge: " << std::fixed << std::setprecision(10) << (fft_merge_timer.get_duration<std::chrono::microseconds>() / 1e6) << '\n';
+    std::cout << "Time spent on middle_ops: " << std::fixed << std::setprecision(10) << (middleops_timer.get_duration<std::chrono::microseconds>() / 1e6) << '\n';
+    std::cout << "Time spent on subsetkernel: " << std::fixed << std::setprecision(10) << (subsetkernel_timer.get_duration<std::chrono::microseconds>() / 1e6) << '\n';
+    std::cout << "Time spent on init: " << std::fixed << std::setprecision(10) << (init_timer.get_duration<std::chrono::microseconds>() / 1e6) << '\n';
     return is_possible;
 
 }
